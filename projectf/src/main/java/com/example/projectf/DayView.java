@@ -164,8 +164,8 @@ private static void editEvent() {
         return;
     }
 
-    EventDialog dialog = new EventDialog(selectedEvent);
-    Event editedEvent = dialog.showAndGetEvent();
+    EventInput input = new EventInput(selectedEvent);
+    Event editedEvent = input.showAndGetEvent();
 
     if (editedEvent != null) {
         int index = getEventsForCurrentDate().indexOf(selectedEvent);
