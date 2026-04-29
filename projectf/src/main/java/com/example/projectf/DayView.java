@@ -150,8 +150,8 @@ private static void showEventDetails() {
 }
 
 private static void addEvent() {
-    EventDialog dialog = new EventDialog(null);
-    Event newEvent = dialog.showAndGetEvent();
+    EventInput input = new EventInput(null);
+    Event newEvent = input.showAndGetEvent();
 
     if (newEvent != null) {
         getEventsForCurrentDate().add(newEvent);
