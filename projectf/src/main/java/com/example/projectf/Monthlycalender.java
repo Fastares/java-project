@@ -10,8 +10,10 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
-
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Month;
+import java.util.Date;
 
 public class Monthlycalender extends Application {
     @Override
@@ -40,9 +42,10 @@ public class Monthlycalender extends Application {
         //add the sidebar and calender to the side
         layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());
 
-        // days
-        Daysinmonth slide = new Daysinmonth(31, "M", layout, 40, 48);
-
+        // (how many days, starting day, the pane, starting postion x, starting postion y)
+        // starting day goes from sunday to saturday from 1-7 minus 1 for 0-6 in short terms
+        // "Su", "M", "Tu", "W", "Th", "F", "Sa"
+        Daysinmonth slide = new Daysinmonth(29, "F", layout, 40, 48, stage);
 
         stage.setScene(scene);
         stage.show();
@@ -112,6 +115,7 @@ public class Monthlycalender extends Application {
         layout.getChildren().addAll(Sunday , Monday, Tuesday, Wesnesday, Thursday, Friday, Saturday);
     }
 }
+
 // this is for the event bar and calender area
 class Rectwboarder {
     private Rectangle boarder;
@@ -151,7 +155,7 @@ class Rectwboarder {
     public double getLayoutY() {return boarder.getLayoutY();}
 
 }
-//event bar wip but it takes the nearest hopefully 6 events and makes them into a list from clost to far
+// event bar wip but it takes the nearest hopefully 6 events and makes them into a list from clost to far
 class Eventbar extends Rectwboarder {
     private int eventcount = 6;
     private int current = 0;
@@ -163,6 +167,11 @@ class Eventbar extends Rectwboarder {
 class Day {
     private Label test;
     private Button side;
+    private int pos = 0;
+    private int month = 5;
+    public Stage center;
+    private LocalDate gain;
+
 
     public Day(int count, Pane hold, double X, double Y) {
         test = new Label("" + count);
@@ -173,6 +182,13 @@ class Day {
         side.setLayoutX(X - 3);
         side.setLayoutY(Y + 45.5);
         side.setPrefSize(65, 25);
+        pos = count;
+        gain = LocalDate.of(LocalDate.now().getYear(), month, count);
+        side.setOnMousePressed(event -> {
+            System.out.println("on");
+            DayView.show(center, gain);
+            System.out.println("hit");
+        });
 
         hold.getChildren().addAll(test, side);
     }
@@ -181,16 +197,19 @@ class Day {
         test.setLayoutX(X);
         side.setLayoutX(X - 3);
     }
-
     public void setLayoutY(double Y) {
         test.setLayoutY(Y);
         side.setLayoutY(Y + 45.5);
     }
 
+    public Button getSide() { return side; }
+
     public void addthis(Pane layout) {
         layout.getChildren().addAll(test, side);
     }
 
+    public int getPos() { return pos; }
+    public void setPos(int pos) { this.pos = pos; }
 
 }
 // used for the calender so it can spam the number of days
@@ -199,15 +218,13 @@ class Daysinmonth {
     private int Sx = 65;
     private int Sy = 55;
     // day is total amount of days, press is the starting day, layout is the pane needed, px is starting x and py is starting y
-    public Daysinmonth(int day, String press, Pane layout,  double pX, double pY) {
+    public Daysinmonth(int day, String press, Pane layout, double pX, double pY, Stage stage) {
         days = new Day[day];
         int i = 0;
         int counter = 0;
-        int start = montonum(press);
-        int temp = start + day;
+        int start = montonum(press) - 1;
         double hori = pX;
         double veri = pY;
-
         while (i != start) {
             hori = hori + Sx;
             counter++;
@@ -217,6 +234,7 @@ class Daysinmonth {
         while (i != day) {
             if (counter < 7) {
                 days[i] = new Day(i + 1, layout, hori, veri);
+                days[i].center = stage;
                 hori = hori + Sx;
             } else {
                 counter = 0;
@@ -231,13 +249,13 @@ class Daysinmonth {
 
     private int montonum(String press) {
         switch (press){
-            case "Su": return 0;
-            case "M": return 1;
-            case "Tu": return 2;
-            case "W" : return 3;
-            case "Th": return 4;
-            case "F" : return 5;
-            case "Sa": return 6;
+            case "Su": return 1;
+            case "M": return 2;
+            case "Tu": return 3;
+            case "W" : return 4;
+            case "Th": return 5;
+            case "F" : return 6;
+            case "Sa": return 7;
         }
         return 0;
     }
