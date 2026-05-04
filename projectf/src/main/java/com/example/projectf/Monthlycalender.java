@@ -13,14 +13,36 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.ArrayList;
 import java.util.Date;
+import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 
 public class Monthlycalender extends Application {
+    protected static LocalDate currentMonth = LocalDate.now();
     @Override
     public void start(Stage stage) throws IOException {
         Pane layout = new Pane();
         Scene scene = new Scene(layout, 650, 400);
 
+        Label monthTitle = new Label(
+                currentMonth.getMonth().toString() + " " + currentMonth.getYear()
+        );
+        Button prevMonth = new Button("<");
+        Button nextMonth = new Button(">");
+        HBox header = new HBox(10); // spacing = 10
+        header.setAlignment(Pos.CENTER);
+        header.setPrefWidth(480); // match your calendar width
+
+        header.getChildren().addAll(prevMonth, monthTitle, nextMonth);
+
+        // position the whole thing once
+        header.setLayoutX(35);   // same as calendar X
+        header.setLayoutY(10);
+        layout.getChildren().add(header);
+
+        monthTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        //layout.getChildren().addAll(prevMonth, monthTitle, nextMonth);
         // calender layout
         Rectwboarder plate = new Rectwboarder(480, 350);
         plate.setLayoutY(40);
@@ -39,7 +61,7 @@ public class Monthlycalender extends Application {
         sidedish.setLayoutX(500);
         sidedish.setLayoutY(40);
 
-        //add the sidebar and calender to the side
+        //add the sidebar and calendar to the side
         layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());
 
         // (how many days, starting day, the pane, starting postion x, starting postion y)
@@ -49,6 +71,24 @@ public class Monthlycalender extends Application {
 
         stage.setScene(scene);
         stage.show();
+
+        prevMonth.setOnAction(e -> {
+            currentMonth = currentMonth.minusMonths(1);
+            try {
+                new Monthlycalender().start(stage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        nextMonth.setOnAction(e -> {
+            currentMonth = currentMonth.plusMonths(1);
+            try {
+                new Monthlycalender().start(stage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 
     void Yaxisgrid(double startX, double startY, double endX, double endY, double space, int num, Pane layout) {
@@ -178,12 +218,21 @@ class Day {
         test.setPrefSize(50, 50);
         test.setLayoutX(X);
         test.setLayoutY(Y);
-        side = new Button("event: 0");
+        //side = new Button("event: 0");
+        //gain = LocalDate.of(LocalDate.now().getYear(), month, count);
+        gain = LocalDate.of(
+                Monthlycalender.currentMonth.getYear(),
+                Monthlycalender.currentMonth.getMonthValue(),
+                count
+        );
+        ArrayList<Event> events = DayView.calendarEvents.get(gain);
+        int eventCount = (events == null) ? 0 : events.size();
+        side = new Button("event: " + eventCount);
+
         side.setLayoutX(X - 3);
         side.setLayoutY(Y + 45.5);
         side.setPrefSize(65, 25);
         pos = count;
-        gain = LocalDate.of(LocalDate.now().getYear(), month, count);
         side.setOnMousePressed(event -> {
             System.out.println("on");
             DayView.show(center, gain);
