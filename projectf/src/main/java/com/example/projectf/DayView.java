@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 public class DayView {
 
-    private static HashMap<LocalDate, ArrayList<Event>> calendarEvents = new HashMap<>();
+    public static HashMap<LocalDate, ArrayList<Event>> calendarEvents = new HashMap<>();
 
     private static LocalDate currentDate;
     private static Event selectedEvent;
@@ -31,10 +31,13 @@ public class DayView {
 
         BorderPane root = new BorderPane();
 
-        Button backButton = new Button("← Month View");
-        Label title = new Label("Day View: " + currentDate);
+        Button backButton = new Button("← Month");
+        Label title = new Label("Day: " + currentDate);
 
-        HBox top = new HBox(15, backButton, title);
+        Button prev = new Button("<");
+        Button next = new Button(">");
+
+        HBox top = new HBox(15, backButton, prev, title, next);
         top.setStyle("-fx-padding: 15; -fx-font-size: 18;");
 
         scheduleList = new ListView<>();
@@ -69,6 +72,16 @@ public class DayView {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        });
+
+        prev.setOnAction(e -> {
+            currentDate = currentDate.minusDays(1);
+            show(stage, currentDate); // reload view
+        });
+
+        next.setOnAction(e -> {
+            currentDate = currentDate.plusDays(1);
+            show(stage, currentDate);
         });
 
         scheduleList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
