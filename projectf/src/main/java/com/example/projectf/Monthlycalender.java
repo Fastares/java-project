@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -34,6 +35,10 @@ public class Monthlycalender extends Application {
         header.setAlignment(Pos.CENTER);
         header.setPrefWidth(480); // match your calendar width
 
+        //no default highlighted button
+        prevMonth.setFocusTraversable(false);
+        nextMonth.setFocusTraversable(false);
+
         header.getChildren().addAll(prevMonth, monthTitle, nextMonth);
 
         // position the whole thing once
@@ -58,16 +63,46 @@ public class Monthlycalender extends Application {
 
         //upandcoming layout
         Rectwboarder sidedish = new Rectwboarder(120, 350);
-        sidedish.setLayoutX(500);
+        sidedish.setLayoutX(492);
         sidedish.setLayoutY(40);
 
+        Label sidebarTitle = new Label("Select a day");
+        sidebarTitle.setLayoutX(505);
+        sidebarTitle.setLayoutY(55);
+
+        ListView<String> sidebarList = new ListView<>();
+        sidebarList.setLayoutX(505);
+        sidebarList.setLayoutY(85);
+        sidebarList.setPrefSize(95, 290);
+        sidebarList.setFocusTraversable(false);
+
+        /*buttons for prev/next day in sidebar
+        Button prevDay = new Button("<");
+        Button nextDay = new Button(">");
+        prevDay.setLayoutX(505);
+        nextDay.setLayoutX(585); // right side of sidebar
+        prevDay.setLayoutY(30);
+        nextDay.setLayoutY(30);*/
+
+        /*layout.getChildren().addAll(sidebarTitle, sidebarList);
+
         //add the sidebar and calendar to the side
+        layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());*/
+
+        // add sidebar background first
         layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());
+
+        // then add sidebar content on top
+        layout.getChildren().addAll(sidebarTitle, sidebarList);
+
+        int daysInMonth = currentMonth.lengthOfMonth();
+        int startDay = currentMonth.withDayOfMonth(1).getDayOfWeek().getValue();
+        int sundayStart = startDay % 7;
 
         // (how many days, starting day, the pane, starting postion x, starting postion y)
         // starting day goes from sunday to saturday from 1-7 minus 1 for 0-6 in short terms
         // "Su", "M", "Tu", "W", "Th", "F", "Sa"
-        Daysinmonth slide = new Daysinmonth(29, "F", layout, 40, 48, stage);
+        Daysinmonth slide = new Daysinmonth(daysInMonth, sundayStart, layout, 40, 48, stage, sidebarTitle, sidebarList);
 
         stage.setScene(scene);
         stage.show();
@@ -205,6 +240,7 @@ class Eventbar extends Rectwboarder {
 }
 // this makes the sorting system of which day it is for example 1 beings up the events of one
 class Day {
+    private static Day selectedDay = null;
     private Label test;
     private Button side;
     private int pos = 0;
@@ -213,7 +249,7 @@ class Day {
     private LocalDate gain;
 
 
-    public Day(int count, Pane hold, double X, double Y) {
+    public Day(int count, Pane hold, double X, double Y, Label sidebarTitle, ListView<String> sidebarList) {
         test = new Label("" + count);
         test.setPrefSize(50, 50);
         test.setLayoutX(X);
@@ -225,19 +261,54 @@ class Day {
                 Monthlycalender.currentMonth.getMonthValue(),
                 count
         );
+
         ArrayList<Event> events = DayView.calendarEvents.get(gain);
         int eventCount = (events == null) ? 0 : events.size();
         side = new Button("event: " + eventCount);
+        side.setFocusTraversable(false);
+
+        side.setOnAction(e -> {
+            sidebarTitle.setText("Events for " + gain.getMonth() + " " + gain.getDayOfMonth());
+
+            sidebarList.getItems().clear();
+
+            ArrayList<Event> daysEvents = DayView.calendarEvents.get(gain);
+
+            if (daysEvents == null || daysEvents.isEmpty()) {
+                sidebarList.getItems().add("No events");
+            } else {
+                for (Event event : daysEvents) {
+                    sidebarList.getItems().add(event.toString());
+                }
+            }
+
+            if (selectedDay != null) {
+                selectedDay.test.setStyle("");
+                selectedDay.side.setStyle("");
+            }
+
+            selectedDay = this;
+
+            //test.setStyle("-fx-background-color: lightblue; -fx-background-insets: 20 10 5 5;");
+        });
+
+        test.setOnMouseClicked(event -> {
+            DayView.show(center, gain);
+        });
+
+        //side.setOnAction(event -> {
+        //    DayView.show(center, gain);
+        //});
 
         side.setLayoutX(X - 3);
         side.setLayoutY(Y + 45.5);
         side.setPrefSize(65, 25);
         pos = count;
-        side.setOnMousePressed(event -> {
+        /*side.setOnMousePressed(event -> {
             System.out.println("on");
             DayView.show(center, gain);
             System.out.println("hit");
-        });
+        });*/
 
         hold.getChildren().addAll(test, side);
     }
@@ -267,11 +338,12 @@ class Daysinmonth {
     private int Sx = 65;
     private int Sy = 55;
     // day is total amount of days, press is the starting day, layout is the pane needed, px is starting x and py is starting y
-    public Daysinmonth(int day, String press, Pane layout, double pX, double pY, Stage stage) {
+    public Daysinmonth(int day, int startOffset, Pane layout, double pX, double pY, Stage stage,
+                       Label sidebarTitle, ListView<String> sidebarList) {
         days = new Day[day];
         int i = 0;
         int counter = 0;
-        int start = montonum(press) - 1;
+        int start = startOffset;
         double hori = pX;
         double veri = pY;
         while (i != start) {
@@ -282,7 +354,7 @@ class Daysinmonth {
         i = 0;
         while (i != day) {
             if (counter < 7) {
-                days[i] = new Day(i + 1, layout, hori, veri);
+                days[i] = new Day(i + 1, layout, hori, veri, sidebarTitle, sidebarList);
                 days[i].center = stage;
                 hori = hori + Sx;
             } else {
