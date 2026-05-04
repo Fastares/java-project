@@ -25,7 +25,8 @@ public class Event {
     public String getNotes() { return notes; }
 
     @Override public String toString() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ha");
         return startTime.format(formatter) + " - " + endTime.format(formatter) + ": " + name;
     }
 }
