@@ -1,10 +1,12 @@
 package com.example.projectf;
 
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -37,8 +39,26 @@ public class DayView {
         Button prev = new Button("<");
         Button next = new Button(">");
 
-        HBox top = new HBox(15, backButton, prev, title, next);
-        top.setStyle("-fx-padding: 15; -fx-font-size: 18;");
+        //no default highlight
+        backButton.setFocusTraversable(false);
+        prev.setFocusTraversable(false);
+        next.setFocusTraversable(false);
+
+        // center group (arrows + title)
+        HBox centerBox = new HBox(10, prev, title, next);
+        centerBox.setAlignment(Pos.CENTER);
+        centerBox.setTranslateX(-50); // move right
+
+        // top bar
+        BorderPane topBar = new BorderPane();
+        topBar.setLeft(backButton);
+        topBar.setCenter(centerBox);
+        topBar.setStyle("-fx-padding: 15; -fx-font-size: 18;");
+
+        root.setTop(topBar);
+        //HBox top = new HBox(15, backButton, prev, title, next);
+        //top.setStyle("-fx-padding: 15; -fx-font-size: 18;");
+        //top.setAlignment(Pos.CENTER);
 
         scheduleList = new ListView<>();
         scheduleList.setPrefHeight(350);
@@ -63,7 +83,7 @@ public class DayView {
 
         center.setStyle("-fx-padding: 15;");
 
-        root.setTop(top);
+        root.setTop(topBar);
         root.setCenter(center);
 
         backButton.setOnAction(e -> {
@@ -89,6 +109,23 @@ public class DayView {
             showEventDetails();
         });
 
+        scheduleList.setOnMouseClicked(e -> {
+            String selectedRow = scheduleList.getSelectionModel().getSelectedItem();
+
+            if (selectedRow != null && selectedEvent == null) {
+                int selectedIndex = scheduleList.getSelectionModel().getSelectedIndex();
+                LocalTime selectedTime = LocalTime.of(6 + selectedIndex, 0);
+
+                EventInput input = new EventInput(null, selectedTime);
+                Event newEvent = input.showAndGetEvent();
+
+                if (newEvent != null) {
+                    getEventsForCurrentDate().add(newEvent);
+                    refreshSchedule();
+                }
+            }
+        });
+
         addButton.setOnAction(e -> addEvent());
         editButton.setOnAction(e -> editEvent());
         deleteButton.setOnAction(e -> deleteEvent());
@@ -108,26 +145,24 @@ public class DayView {
     private static void refreshSchedule() {
         scheduleList.getItems().clear();
 
-        for (int hour = 8; hour <= 23; hour++) {
+        for (int hour = 6; hour <= 23; hour++) {
             LocalTime time = LocalTime.of(hour, 0);
             String row = time.format(displayFormatter) + "  |  ";
 
-            ArrayList<Event> eventsAtHour = new ArrayList<>();
+            ArrayList<String> rowItems = new ArrayList<>();
 
             for (Event event : getEventsForCurrentDate()) {
-                if (event.getStartTime().getHour() == hour) {
-                    eventsAtHour.add(event);
+                int startHour = event.getStartTime().getHour();
+                int endHour = event.getEndTime().getHour();
+
+                if (hour == startHour) {
+                    rowItems.add(event.getName());
+                } else if (hour > startHour && hour < endHour) {
+                    rowItems.add("↓");
                 }
             }
 
-            if (eventsAtHour.isEmpty()) {
-                row += "";
-            } else {
-                for (Event event : eventsAtHour) {
-                    row += event.getName() + " ";
-                }
-            }
-
+            row += String.join(" - ", rowItems);
             scheduleList.getItems().add(row);
         }
 
@@ -153,6 +188,11 @@ public class DayView {
             detailsArea.clear();
             return;
         }
+
+        long minutes = Duration.between(
+                selectedEvent.getStartTime(),
+                selectedEvent.getEndTime()
+        ).toMinutes();
 
         detailsArea.setText(
                 "Name: " + selectedEvent.getName() + "\n" +
