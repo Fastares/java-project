@@ -9,9 +9,15 @@ import java.time.format.DateTimeFormatter;
 public class EventInput {
 
     private Event originalEvent;
-
     public EventInput(Event event) {
         this.originalEvent = event;
+    }
+
+    private LocalTime preselectedStartTime;
+
+    public EventInput(Event event, LocalTime preselectedStartTime) {
+        this.originalEvent = event;
+        this.preselectedStartTime = preselectedStartTime;
     }
 
     public Event showAndGetEvent() {
@@ -22,27 +28,46 @@ public class EventInput {
         dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
 
         TextField nameField = new TextField();
-        TextField startField = new TextField();
-        TextField endField = new TextField();
+        //TextField startField = new TextField();
+        //TextField endField = new TextField();
+        ComboBox<String> startBox = new ComboBox<>();
+        ComboBox<String> endBox = new ComboBox<>();
+
+        for (int hour = 6; hour <= 23; hour++) {
+            LocalTime time = LocalTime.of(hour, 0);
+            String formatted = time.format(DateTimeFormatter.ofPattern("h:mm a"));
+            startBox.getItems().add(formatted);
+            endBox.getItems().add(formatted);
+        }
 
         ComboBox<String> categoryBox = new ComboBox<>();
         categoryBox.getItems().addAll("School", "Activities", "Work", "Appointments", "Other");
 
         TextArea notesArea = new TextArea();
 
-        startField.setPromptText("Example: 1:00 PM or 13:00");
-        endField.setPromptText("Example: 2:30 PM or 14:30");
+        //startField.setPromptText("Example: 1:00 PM or 13:00");
+        //endField.setPromptText("Example: 2:30 PM or 14:30");
 
         if (originalEvent != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm a");
 
             nameField.setText(originalEvent.getName());
-            startField.setText(originalEvent.getStartTime().format(formatter));
-            endField.setText(originalEvent.getEndTime().format(formatter));
+            startBox.setValue(originalEvent.getStartTime().format(formatter));
+            endBox.setValue(originalEvent.getEndTime().format(formatter));
+            //startField.setText(originalEvent.getStartTime().format(formatter));
+            //endField.setText(originalEvent.getEndTime().format(formatter));
             categoryBox.setValue(originalEvent.getCategory());
             notesArea.setText(originalEvent.getNotes());
         } else {
             categoryBox.setValue("Other");
+
+            if (preselectedStartTime != null) {
+                startBox.setValue(preselectedStartTime.format(DateTimeFormatter.ofPattern("h:mm a")));
+                endBox.setValue(preselectedStartTime.plusHours(1).format(DateTimeFormatter.ofPattern("h:mm a")));
+            } else {
+                startBox.setValue("9:00 AM");
+                endBox.setValue("10:00 AM");
+            }
         }
 
         GridPane grid = new GridPane();
@@ -53,10 +78,10 @@ public class EventInput {
         grid.add(nameField, 1, 0);
 
         grid.add(new Label("Start time:"), 0, 1);
-        grid.add(startField, 1, 1);
+        grid.add(startBox, 1, 1);
 
         grid.add(new Label("End time:"), 0, 2);
-        grid.add(endField, 1, 2);
+        grid.add(endBox, 1, 2);
 
         grid.add(new Label("Category:"), 0, 3);
         grid.add(categoryBox, 1, 3);
@@ -69,10 +94,21 @@ public class EventInput {
         dialog.setResultConverter(button -> {
             if (button == saveButton) {
                 try {
+                    LocalTime start = parseTime(startBox.getValue());
+                    LocalTime end = parseTime(endBox.getValue());
+
+                    if (!end.isAfter(start)) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Invalid Time");
+                        alert.setHeaderText("End time must be after start time.");
+                        alert.setContentText("Please choose an end time later than the start time.");
+                        alert.showAndWait();
+                        return null;
+                    }
                     return new Event(
                             nameField.getText(),
-                            parseTime(startField.getText()),
-                            parseTime(endField.getText()),
+                            start,
+                            end,
                             categoryBox.getValue(),
                             notesArea.getText()
                     );
@@ -80,7 +116,7 @@ public class EventInput {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Invalid Input");
                     alert.setHeaderText("Please check your event information.");
-                    alert.setContentText("Time should look like 1:00 PM or 13:00.");
+                    alert.setContentText("Make sure all fields are filled out correctly.");
                     alert.showAndWait();
                     return null;
                 }
