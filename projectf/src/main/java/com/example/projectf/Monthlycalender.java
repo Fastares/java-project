@@ -4,7 +4,6 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -13,41 +12,13 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.Month;
-import java.util.ArrayList;
-import java.util.Date;
-import javafx.geometry.Pos;
-import javafx.scene.layout.HBox;
 
 public class Monthlycalender extends Application {
-    protected static LocalDate currentMonth = LocalDate.now();
     @Override
     public void start(Stage stage) throws IOException {
         Pane layout = new Pane();
         Scene scene = new Scene(layout, 650, 400);
 
-        Label monthTitle = new Label(
-                currentMonth.getMonth().toString() + " " + currentMonth.getYear()
-        );
-        Button prevMonth = new Button("<");
-        Button nextMonth = new Button(">");
-        HBox header = new HBox(10); // spacing = 10
-        header.setAlignment(Pos.CENTER);
-        header.setPrefWidth(480); // match your calendar width
-
-        //no default highlighted button
-        prevMonth.setFocusTraversable(false);
-        nextMonth.setFocusTraversable(false);
-
-        header.getChildren().addAll(prevMonth, monthTitle, nextMonth);
-
-        // position the whole thing once
-        header.setLayoutX(35);   // same as calendar X
-        header.setLayoutY(10);
-        layout.getChildren().add(header);
-
-        monthTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-        //layout.getChildren().addAll(prevMonth, monthTitle, nextMonth);
         // calender layout
         Rectwboarder plate = new Rectwboarder(480, 350);
         plate.setLayoutY(40);
@@ -62,68 +33,21 @@ public class Monthlycalender extends Application {
         daysinweek(64, 45, 65, layout);
 
         //upandcoming layout
-        Rectwboarder sidedish = new Rectwboarder(120, 350);
-        sidedish.setLayoutX(492);
+        Eventbar sidedish = new Eventbar(120, 350);
+        sidedish.setLayoutX(493);
         sidedish.setLayoutY(40);
 
-        Label sidebarTitle = new Label("Select a day");
-        sidebarTitle.setLayoutX(505);
-        sidebarTitle.setLayoutY(55);
-
-        ListView<String> sidebarList = new ListView<>();
-        sidebarList.setLayoutX(505);
-        sidebarList.setLayoutY(85);
-        sidebarList.setPrefSize(95, 290);
-        sidebarList.setFocusTraversable(false);
-
-        /*buttons for prev/next day in sidebar
-        Button prevDay = new Button("<");
-        Button nextDay = new Button(">");
-        prevDay.setLayoutX(505);
-        nextDay.setLayoutX(585); // right side of sidebar
-        prevDay.setLayoutY(30);
-        nextDay.setLayoutY(30);*/
-
-        /*layout.getChildren().addAll(sidebarTitle, sidebarList);
-
-        //add the sidebar and calendar to the side
-        layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());*/
-
-        // add sidebar background first
+        //add the sidebar and calender to the side
         layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());
-
-        // then add sidebar content on top
-        layout.getChildren().addAll(sidebarTitle, sidebarList);
-
-        int daysInMonth = currentMonth.lengthOfMonth();
-        int startDay = currentMonth.withDayOfMonth(1).getDayOfWeek().getValue();
-        int sundayStart = startDay % 7;
 
         // (how many days, starting day, the pane, starting postion x, starting postion y)
         // starting day goes from sunday to saturday from 1-7 minus 1 for 0-6 in short terms
         // "Su", "M", "Tu", "W", "Th", "F", "Sa"
-        Daysinmonth slide = new Daysinmonth(daysInMonth, sundayStart, layout, 40, 48, stage, sidebarTitle, sidebarList);
+        Daysinmonth slide = new Daysinmonth(29, "F", layout, 40, 48, stage);
+
 
         stage.setScene(scene);
         stage.show();
-
-        prevMonth.setOnAction(e -> {
-            currentMonth = currentMonth.minusMonths(1);
-            try {
-                new Monthlycalender().start(stage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        nextMonth.setOnAction(e -> {
-            currentMonth = currentMonth.plusMonths(1);
-            try {
-                new Monthlycalender().start(stage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
     }
 
     void Yaxisgrid(double startX, double startY, double endX, double endY, double space, int num, Pane layout) {
@@ -187,197 +111,49 @@ public class Monthlycalender extends Application {
         Saturday.setLayoutX(Friday.getLayoutX() + divider);
         Saturday.setLayoutY(Y);
 
-        layout.getChildren().addAll(Sunday , Monday, Tuesday, Wesnesday, Thursday, Friday, Saturday);
+        Label substube = new Label(Monthname(5));
+        substube.setLayoutX(280);
+        substube.setLayoutY(3);
+        substube.setMaxSize(300, 300);
+        substube.setPrefSize(100, 50);
+        substube.setViewOrder(-2.0);
+
+        Rectwboarder bubstube = new Rectwboarder(50, 22);
+        bubstube.setLayoutX(substube.getLayoutX() - 13);
+        bubstube.setLayoutY(substube.getLayoutY() + 14);
+
+
+        layout.getChildren().addAll(bubstube.getBoarder(), bubstube.getFillw(), substube, Sunday , Monday, Tuesday, Wesnesday, Thursday, Friday, Saturday);
     }
-}
+    public String Monthname(int month) {
+        switch (month) {
+            case 1:
+                return "January";
+            case 2:
+                return "February";
+            case 3:
+                return "March";
+            case 4:
+                return "April";
+            case 5:
+                return "May";
+            case 6:
+                return "June";
+            case 7:
+                return "July";
+            case 8:
+                return "August";
+            case 9:
+                return "September";
+            case 10:
+                return "October";
+            case 11:
+                return "November";
+            case 12:
+                return "December";
 
-// this is for the event bar and calender area
-class Rectwboarder {
-    private Rectangle boarder;
-    private Rectangle fillw;
-    // constructor
-    public Rectwboarder(double width, double height) {
-        boarder = new Rectangle(width, height);
-        fillw = new Rectangle(boarder.getWidth() - 4 , boarder.getHeight() - 4);
-        fillw.setLayoutX(2);
-        fillw.setLayoutY(2);
-
-        SetFillarea(Color.WHITE);
-        SetFillbound(Color.BLACK);
-
-    }
-    // rectangle grab (just incase)
-    public Rectangle getBoarder() { return boarder; }
-    public Rectangle getFillw() { return fillw; }
-    // color
-    public void SetFillarea (Paint value) {fillw.setFill(value);}
-    public void SetFillbound (Paint value) {boarder.setFill(value);}
-    public void SetFill(Paint value) {
-        fillw.setFill(value);
-        boarder.setFill(value);
-    }
-    // x pos
-    public void setLayoutX(double Xmark) {
-        boarder.setLayoutX(Xmark);
-        fillw.setLayoutX((Xmark + (boarder.getWidth() - fillw.getWidth()) / 2));
-    }
-    public double getLayoutX() { return boarder.getLayoutX(); }
-    // y pos
-    public void setLayoutY (double Ymark) {
-        boarder.setLayoutY(Ymark);
-        fillw.setLayoutY(Ymark + (boarder.getHeight() - fillw.getHeight()) / 2);
-    }
-    public double getLayoutY() {return boarder.getLayoutY();}
-
-}
-// event bar wip but it takes the nearest hopefully 6 events and makes them into a list from clost to far
-class Eventbar extends Rectwboarder {
-    private int eventcount = 6;
-    private int current = 0;
-    public Eventbar(double width, double height) {
-        super(width, height);
-    }
-}
-// this makes the sorting system of which day it is for example 1 beings up the events of one
-class Day {
-    private static Day selectedDay = null;
-    private Label test;
-    private Button side;
-    private int pos = 0;
-    private int month = 5;
-    public Stage center;
-    private LocalDate gain;
-
-
-    public Day(int count, Pane hold, double X, double Y, Label sidebarTitle, ListView<String> sidebarList) {
-        test = new Label("" + count);
-        test.setPrefSize(50, 50);
-        test.setLayoutX(X);
-        test.setLayoutY(Y);
-        //side = new Button("event: 0");
-        //gain = LocalDate.of(LocalDate.now().getYear(), month, count);
-        gain = LocalDate.of(
-                Monthlycalender.currentMonth.getYear(),
-                Monthlycalender.currentMonth.getMonthValue(),
-                count
-        );
-
-        ArrayList<Event> events = DayView.calendarEvents.get(gain);
-        int eventCount = (events == null) ? 0 : events.size();
-        side = new Button("event: " + eventCount);
-        side.setFocusTraversable(false);
-
-        side.setOnAction(e -> {
-            sidebarTitle.setText("Events for " + gain.getMonth() + " " + gain.getDayOfMonth());
-
-            sidebarList.getItems().clear();
-
-            ArrayList<Event> daysEvents = DayView.calendarEvents.get(gain);
-
-            if (daysEvents == null || daysEvents.isEmpty()) {
-                sidebarList.getItems().add("No events");
-            } else {
-                for (Event event : daysEvents) {
-                    sidebarList.getItems().add(event.toString());
-                }
-            }
-
-            if (selectedDay != null) {
-                selectedDay.test.setStyle("");
-                selectedDay.side.setStyle("");
-            }
-
-            selectedDay = this;
-
-            //test.setStyle("-fx-background-color: lightblue; -fx-background-insets: 20 10 5 5;");
-        });
-
-        test.setOnMouseClicked(event -> {
-            DayView.show(center, gain);
-        });
-
-        //side.setOnAction(event -> {
-        //    DayView.show(center, gain);
-        //});
-
-        side.setLayoutX(X - 3);
-        side.setLayoutY(Y + 45.5);
-        side.setPrefSize(65, 25);
-        pos = count;
-        /*side.setOnMousePressed(event -> {
-            System.out.println("on");
-            DayView.show(center, gain);
-            System.out.println("hit");
-        });*/
-
-        hold.getChildren().addAll(test, side);
-    }
-
-    public void setLayoutX(double X) {
-        test.setLayoutX(X);
-        side.setLayoutX(X - 3);
-    }
-    public void setLayoutY(double Y) {
-        test.setLayoutY(Y);
-        side.setLayoutY(Y + 45.5);
-    }
-
-    public Button getSide() { return side; }
-
-    public void addthis(Pane layout) {
-        layout.getChildren().addAll(test, side);
-    }
-
-    public int getPos() { return pos; }
-    public void setPos(int pos) { this.pos = pos; }
-
-}
-// used for the calender so it can spam the number of days
-class Daysinmonth {
-    private Day[] days;
-    private int Sx = 65;
-    private int Sy = 55;
-    // day is total amount of days, press is the starting day, layout is the pane needed, px is starting x and py is starting y
-    public Daysinmonth(int day, int startOffset, Pane layout, double pX, double pY, Stage stage,
-                       Label sidebarTitle, ListView<String> sidebarList) {
-        days = new Day[day];
-        int i = 0;
-        int counter = 0;
-        int start = startOffset;
-        double hori = pX;
-        double veri = pY;
-        while (i != start) {
-            hori = hori + Sx;
-            counter++;
-            i++;
         }
-        i = 0;
-        while (i != day) {
-            if (counter < 7) {
-                days[i] = new Day(i + 1, layout, hori, veri, sidebarTitle, sidebarList);
-                days[i].center = stage;
-                hori = hori + Sx;
-            } else {
-                counter = 0;
-                veri = veri + Sy;
-                hori = pX;
-                continue;
-            }
-            counter++;
-            i++;
-        }
-    }
-
-    private int montonum(String press) {
-        switch (press){
-            case "Su": return 1;
-            case "M": return 2;
-            case "Tu": return 3;
-            case "W" : return 4;
-            case "Th": return 5;
-            case "F" : return 6;
-            case "Sa": return 7;
-        }
-        return 0;
+        return "";
     }
 }
+
