@@ -1,0 +1,259 @@
+package com.example.projectf;
+
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+
+import java.sql.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+
+public class DayView {
+    private static LocalDate currentDate;
+    private static Event selectedEvent;
+
+    private static ListView<String> scheduleList;
+    private static TextArea detailsArea;
+
+    private static DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("h:mm a");
+
+    public static void show(Stage stage, LocalDate date) {
+        System.out.println("yes");
+        currentDate = date;
+
+        BorderPane root = new BorderPane();
+
+        Button backButton = new Button("← Month");
+        Label title = new Label("Day: " + currentDate);
+
+        Button prev = new Button("<");
+        Button next = new Button(">");
+
+        //no default highlight
+        backButton.setFocusTraversable(false);
+        prev.setFocusTraversable(false);
+        next.setFocusTraversable(false);
+
+        // center group (arrows + title)
+        HBox centerBox = new HBox(10, prev, title, next);
+        centerBox.setAlignment(Pos.CENTER);
+        centerBox.setTranslateX(-50); // move right
+
+        // top bar
+        BorderPane topBar = new BorderPane();
+        topBar.setLeft(backButton);
+        topBar.setCenter(centerBox);
+        topBar.setStyle("-fx-padding: 15; -fx-font-size: 18;");
+
+        root.setTop(topBar);
+        //HBox top = new HBox(15, backButton, prev, title, next);
+        //top.setStyle("-fx-padding: 15; -fx-font-size: 18;");
+        //top.setAlignment(Pos.CENTER);
+
+        scheduleList = new ListView<>();
+        scheduleList.setPrefHeight(350);
+
+        detailsArea = new TextArea();
+        detailsArea.setEditable(false);
+        detailsArea.setPrefHeight(120);
+
+        Button addButton = new Button("Add Event");
+        Button editButton = new Button("Edit Event");
+        Button deleteButton = new Button("Delete Event");
+
+        HBox buttons = new HBox(10, addButton, editButton, deleteButton);
+
+        VBox center = new VBox(10,
+                new Label("Schedule:"),
+                scheduleList,
+                new Label("Selected Event:"),
+                detailsArea,
+                buttons
+        );
+
+        center.setStyle("-fx-padding: 15;");
+
+        root.setTop(topBar);
+        root.setCenter(center);
+
+        backButton.setOnAction(e -> {
+            try {
+                new Monthlycalender().start(stage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        prev.setOnAction(e -> {
+            currentDate = currentDate.minusDays(1);
+            show(stage, currentDate); // reload view
+        });
+
+        next.setOnAction(e -> {
+            currentDate = currentDate.plusDays(1);
+            show(stage, currentDate);
+        });
+
+        scheduleList.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+            selectedEvent = getSelectedEventFromRow(newValue);
+            showEventDetails();
+        });
+
+        scheduleList.setOnMouseClicked(e -> {
+
+            String selectedRow =
+                    scheduleList.getSelectionModel().getSelectedItem();
+
+            selectedEvent = getSelectedEventFromRow(selectedRow);
+
+            if (selectedRow != null && selectedEvent == null) {
+
+                int selectedIndex =
+                        scheduleList.getSelectionModel().getSelectedIndex();
+
+                LocalTime selectedTime =
+                        LocalTime.of(6 + selectedIndex, 0);
+
+                EventInput input =
+                        new EventInput(null, selectedTime);
+
+                Event newEvent = input.showAndGetEvent();
+
+                if (newEvent != null) {
+
+                    newEvent.saveToDatabase();
+
+                    getEventsForCurrentDate().add(newEvent);
+
+                    refreshSchedule();
+                }
+            }
+        });
+
+        addButton.setOnAction(e -> addEvent());
+        editButton.setOnAction(e -> editEvent());
+        deleteButton.setOnAction(e -> deleteEvent());
+
+        refreshSchedule();
+
+        Scene scene = new Scene(root, 600, 600);
+        stage.setScene(scene);
+        stage.setTitle("Day View");
+        stage.show();
+    }
+
+    private static ArrayList<Event> getEventsForCurrentDate() {
+        return Event.loadEventsFromDatabase(currentDate);
+    }
+
+    private static void refreshSchedule() {
+        scheduleList.getItems().clear();
+
+        for (int hour = 6; hour <= 23; hour++) {
+            LocalTime time = LocalTime.of(hour, 0);
+            String row = time.format(displayFormatter) + "  |  ";
+
+            ArrayList<String> rowItems = new ArrayList<>();
+
+            for (Event event : getEventsForCurrentDate()) {
+                int startHour = event.getStartTime().getHour();
+                int endHour = event.getEndTime().getHour();
+
+                if (hour == startHour) {
+                    rowItems.add(event.getName());
+                } else if (hour > startHour && hour < endHour) {
+                    rowItems.add("↓");
+                }
+            }
+
+            row += String.join(" - ", rowItems);
+            scheduleList.getItems().add(row);
+        }
+
+        detailsArea.clear();
+    }
+
+    private static Event getSelectedEventFromRow(String row) {
+        if (row == null) {
+            return null;
+        }
+
+        for (Event event : getEventsForCurrentDate()) {
+            if (row.contains(event.getName())) {
+                return event;
+            }
+        }
+
+        return null;
+    }
+
+    private static void showEventDetails() {
+        if (selectedEvent == null) {
+            detailsArea.clear();
+            return;
+        }
+
+        long minutes = Duration.between(
+                selectedEvent.getStartTime(),
+                selectedEvent.getEndTime()
+        ).toMinutes();
+
+        detailsArea.setText(
+                "Name: " + selectedEvent.getName() + "\n" +
+                        "Category: " + selectedEvent.getCategory() + "\n" +
+                        "Time: " + selectedEvent.getStartTime().format(displayFormatter)
+                        + " - " + selectedEvent.getEndTime().format(displayFormatter) + "\n" +
+                        "Notes: " + selectedEvent.getNotes()
+        );
+    }
+
+    private static void addEvent() {
+        EventInput input = new EventInput(null);
+        Event newEvent = input.showAndGetEvent();
+
+        if (newEvent != null) {
+            newEvent.saveToDatabase();
+            refreshSchedule();
+        }
+    }
+
+    private static void editEvent() {
+
+        if (selectedEvent == null) return;
+
+        Event old = selectedEvent;
+
+        EventInput input = new EventInput(selectedEvent);
+        Event updated = input.showAndGetEvent();
+
+        if (updated != null) {
+
+            old.deleteFromDatabase();
+            updated.saveToDatabase();
+
+            selectedEvent = updated;
+
+            refreshSchedule();
+            showEventDetails();
+        }
+    }
+
+    private static void deleteEvent() {
+        if (selectedEvent != null) {
+            selectedEvent.deleteFromDatabase();
+            selectedEvent = null;
+            refreshSchedule();
+        }
+    }
+
+    public static LocalDate getCurrentDate() {
+        return currentDate;
+    }
+}
