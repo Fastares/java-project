@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -12,13 +13,41 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.Month;
+import java.util.ArrayList;
+import java.util.Date;
+import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 
 public class Monthlycalender extends Application {
+    protected static LocalDate currentMonth = LocalDate.now();
     @Override
     public void start(Stage stage) throws IOException {
         Pane layout = new Pane();
         Scene scene = new Scene(layout, 650, 400);
 
+        Label monthTitle = new Label(
+                currentMonth.getMonth().toString() + " " + currentMonth.getYear()
+        );
+        Button prevMonth = new Button("<");
+        Button nextMonth = new Button(">");
+        HBox header = new HBox(10); // spacing = 10
+        header.setAlignment(Pos.CENTER);
+        header.setPrefWidth(480); // match your calendar width
+
+        //no default highlighted button
+        prevMonth.setFocusTraversable(false);
+        nextMonth.setFocusTraversable(false);
+
+        header.getChildren().addAll(prevMonth, monthTitle, nextMonth);
+
+        // position the whole thing once
+        header.setLayoutX(35);   // same as calendar X
+        header.setLayoutY(10);
+        layout.getChildren().add(header);
+
+        monthTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        //layout.getChildren().addAll(prevMonth, monthTitle, nextMonth);
         // calender layout
         Rectwboarder plate = new Rectwboarder(480, 350);
         plate.setLayoutY(40);
@@ -33,21 +62,68 @@ public class Monthlycalender extends Application {
         daysinweek(64, 45, 65, layout);
 
         //upandcoming layout
-        Eventbar sidedish = new Eventbar(120, 350);
-        sidedish.setLayoutX(493);
+        Rectwboarder sidedish = new Rectwboarder(120, 350);
+        sidedish.setLayoutX(492);
         sidedish.setLayoutY(40);
 
-        //add the sidebar and calender to the side
+        Label sidebarTitle = new Label("Select a day");
+        sidebarTitle.setLayoutX(505);
+        sidebarTitle.setLayoutY(55);
+
+        ListView<String> sidebarList = new ListView<>();
+        sidebarList.setLayoutX(505);
+        sidebarList.setLayoutY(85);
+        sidebarList.setPrefSize(95, 290);
+        sidebarList.setFocusTraversable(false);
+
+        /*buttons for prev/next day in sidebar
+        Button prevDay = new Button("<");
+        Button nextDay = new Button(">");
+        prevDay.setLayoutX(505);
+        nextDay.setLayoutX(585); // right side of sidebar
+        prevDay.setLayoutY(30);
+        nextDay.setLayoutY(30);*/
+
+        /*layout.getChildren().addAll(sidebarTitle, sidebarList);
+
+        //add the sidebar and calendar to the side
+        layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());*/
+
+        // add sidebar background first
         layout.getChildren().addAll(sidedish.getBoarder(), sidedish.getFillw());
+
+        // then add sidebar content on top
+        layout.getChildren().addAll(sidebarTitle, sidebarList);
+
+        int daysInMonth = currentMonth.lengthOfMonth();
+        int startDay = currentMonth.withDayOfMonth(1).getDayOfWeek().getValue();
+        int sundayStart = startDay % 7;
 
         // (how many days, starting day, the pane, starting postion x, starting postion y)
         // starting day goes from sunday to saturday from 1-7 minus 1 for 0-6 in short terms
         // "Su", "M", "Tu", "W", "Th", "F", "Sa"
-        Daysinmonth slide = new Daysinmonth(29, "F", layout, 40, 48, stage);
-
+        Daysinmonth slide = new Daysinmonth(daysInMonth, sundayStart, layout, 40, 48, stage, sidebarTitle, sidebarList);
 
         stage.setScene(scene);
         stage.show();
+
+        prevMonth.setOnAction(e -> {
+            currentMonth = currentMonth.minusMonths(1);
+            try {
+                new Monthlycalender().start(stage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        nextMonth.setOnAction(e -> {
+            currentMonth = currentMonth.plusMonths(1);
+            try {
+                new Monthlycalender().start(stage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 
     void Yaxisgrid(double startX, double startY, double endX, double endY, double space, int num, Pane layout) {
@@ -111,49 +187,6 @@ public class Monthlycalender extends Application {
         Saturday.setLayoutX(Friday.getLayoutX() + divider);
         Saturday.setLayoutY(Y);
 
-        Label substube = new Label(Monthname(5));
-        substube.setLayoutX(280);
-        substube.setLayoutY(3);
-        substube.setMaxSize(300, 300);
-        substube.setPrefSize(100, 50);
-        substube.setViewOrder(-2.0);
-
-        Rectwboarder bubstube = new Rectwboarder(50, 22);
-        bubstube.setLayoutX(substube.getLayoutX() - 13);
-        bubstube.setLayoutY(substube.getLayoutY() + 14);
-
-
-        layout.getChildren().addAll(bubstube.getBoarder(), bubstube.getFillw(), substube, Sunday , Monday, Tuesday, Wesnesday, Thursday, Friday, Saturday);
-    }
-    public String Monthname(int month) {
-        switch (month) {
-            case 1:
-                return "January";
-            case 2:
-                return "February";
-            case 3:
-                return "March";
-            case 4:
-                return "April";
-            case 5:
-                return "May";
-            case 6:
-                return "June";
-            case 7:
-                return "July";
-            case 8:
-                return "August";
-            case 9:
-                return "September";
-            case 10:
-                return "October";
-            case 11:
-                return "November";
-            case 12:
-                return "December";
-
-        }
-        return "";
+        layout.getChildren().addAll(Sunday , Monday, Tuesday, Wesnesday, Thursday, Friday, Saturday);
     }
 }
-
