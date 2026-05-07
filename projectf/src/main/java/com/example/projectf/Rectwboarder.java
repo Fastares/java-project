@@ -5,7 +5,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 
 // this is for the event bar and calender area
-public class Rectwboarder {
+class Rectwboarder {
     private Rectangle boarder;
     private Rectangle fillw;
     // constructor
